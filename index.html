@@ -17,7 +17,7 @@
     <link rel="icon" type="image/jpeg" href="https://live.staticflickr.com/65535/55029124882_7475af0c44_m.jpg">
 
     <!-- Embedded Manifest for PWA (Single File) -->
-    <link rel="manifest" href='data:application/manifest+json,{"name":"MathQuest: The Kingdom Savior","short_name":"MathQuest","start_url":".","display":"standalone","orientation":"portrait","background_color":"#111827","theme_color":"#312e81","icons":[{"src":"https://live.staticflickr.com/65535/55029124882_7475af0c44_m.jpg","sizes":"512x512","type":"image/jpeg"}]}'>
+    <link rel="manifest" id="manifest-placeholder">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Kanit:wght@400;600&display=swap" rel="stylesheet">
@@ -59,6 +59,35 @@
         ::-webkit-scrollbar-track { background: #1a202c; }
         ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
     </style>
+
+    <!-- Inject Manifest Dynamically with correct URLs -->
+    <script>
+        const manifest = {
+            "name": "MathQuest",
+            "short_name": "MathQuest",
+            "start_url": ".",
+            "display": "standalone",
+            "orientation": "portrait",
+            "background_color": "#1f2937",
+            "theme_color": "#312e81",
+            "icons": [
+                {
+                    "src": "https://live.staticflickr.com/65535/55029124882_7475af0c44_m.jpg",
+                    "sizes": "192x192",
+                    "type": "image/jpeg"
+                },
+                {
+                    "src": "https://live.staticflickr.com/65535/55029124882_7475af0c44_m.jpg",
+                    "sizes": "512x512",
+                    "type": "image/jpeg"
+                }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector('#manifest-placeholder').setAttribute('href', manifestURL);
+    </script>
 </head>
 <body class="bg-gray-900 text-white min-h-[100dvh] flex items-center justify-center p-0 md:p-4 select-none overflow-hidden">
 
@@ -142,6 +171,11 @@
                 </div>
             </div>
 
+            <!-- Install Button (Hidden by default) -->
+            <button id="install-btn" class="hidden w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded mb-2 font-ui text-sm animate-pulse border-2 border-purple-400">
+                📲 ติดตั้งแอป (Install App)
+            </button>
+
             <!-- Choices -->
             <div id="choices-container" class="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-32">
                 <button onclick="resetToTitle()" class="col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all text-lg font-ui h-full flex items-center justify-center">
@@ -173,6 +207,60 @@
     </div>
 
     <script>
+        // --- 0. PWA INSTALLATION LOGIC ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+
+        // Service Worker Registration (Required for PWA)
+        if ('serviceWorker' in navigator) {
+            // Create a "fake" service worker from a blob to trick the browser into thinking it's a PWA
+            const swCode = `
+                self.addEventListener('install', (e) => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(self.clients.claim());
+                });
+                self.addEventListener('fetch', (e) => {
+                    // Pass through all requests
+                    e.respondWith(fetch(e.request));
+                });
+            `;
+            const blob = new Blob([swCode], {type: 'application/javascript'});
+            const swUrl = URL.createObjectURL(blob);
+
+            navigator.serviceWorker.register(swUrl)
+                .then(reg => console.log('SW Registered', reg))
+                .catch(err => console.log('SW Error', err));
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Update UI to notify the user they can add to home screen
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', (e) => {
+            // Hide our user interface that shows our A2HS button
+            installBtn.classList.add('hidden');
+            // Show the prompt
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    } else {
+                        console.log('User dismissed the A2HS prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        });
+
         // --- 1. CONFIGURATION ---
 
         const gradeConfig = [

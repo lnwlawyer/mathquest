@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MathQuest: The Kingdom Savior</title>
+    
+    <!-- PWA / Mobile Web App Settings -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#312e81">
+    <meta name="application-name" content="MathQuest">
+
+    <!-- Icons for Home Screen -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2928/2928883.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2928/2928883.png">
+
+    <!-- Embedded Manifest for PWA (Single File) -->
+    <link rel="manifest" href='data:application/manifest+json;base64,ewogICJuYW1lIjogIk1hdGhRdWVzdDogVGhlIEtpbmdkb20gU2F2aW9yIiwKICAic2hvcnRfbmFtZSI6ICJNYXRoUXVlc3QiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTExODI3IiwKICAidGhlbWVfY29sb3IiOiAiIzMxMmU4MSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzI5MjgvMjkyODg4My5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0='>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Kanit:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -11,6 +26,7 @@
         body {
             font-family: 'Press Start 2P', cursive;
             touch-action: manipulation; /* Prevent double-tap zoom */
+            overscroll-behavior: none; /* Prevent bounce effect */
         }
         .font-ui {
             font-family: 'Kanit', sans-serif;
@@ -226,12 +242,20 @@
             { name: "Genie", emoji: "🧞", tier: 3 }, { name: "Witch", emoji: "🧙‍♀️", tier: 3 },
             { name: "Yeti", emoji: "🦍", tier: 3 }, { name: "Shark", emoji: "🦈", tier: 3 },
             
-            // Tier 4-5: Bosses (High Levels/Endless)
-            { name: "Dragon", emoji: "🐉", tier: 4 }, { name: "T-Rex", emoji: "🦖", tier: 4 },
-            { name: "Kraken", emoji: "🐙", tier: 4 }, { name: "Demon", emoji: "👿", tier: 4 },
-            { name: "Alien", emoji: "👽", tier: 4 }, { name: "Robot", emoji: "🤖", tier: 4 },
-            { name: "UFO", emoji: "🛸", tier: 4 }, { name: "Phoenix", emoji: "🦅🔥", tier: 4 },
-            { name: "Hydra", emoji: "🐍🐍", tier: 4 }, { name: "King Kong", emoji: "🦍👑", tier: 4 }
+            // Tier 4: Epic Bosses (High Levels/Endless) - Expanded
+            { name: "Red Dragon", emoji: "🐉🔥", tier: 4 }, { name: "T-Rex", emoji: "🦖", tier: 4 },
+            { name: "Kraken", emoji: "🐙🌊", tier: 4 }, { name: "Demon Lord", emoji: "👿👑", tier: 4 },
+            { name: "Alien Overlord", emoji: "👽🛸", tier: 4 }, { name: "Mecha Titan", emoji: "🤖🦾", tier: 4 },
+            { name: "Phoenix", emoji: "🦅🔥", tier: 4 }, { name: "Hydra", emoji: "🐍🐍", tier: 4 }, 
+            { name: "King Kong", emoji: "🦍👑", tier: 4 }, { name: "Cerberus", emoji: "🐕🐕🐕", tier: 4 },
+            { name: "Grim Reaper", emoji: "☠️⛓️", tier: 4 }, { name: "Dark Knight", emoji: "🛡️🖤", tier: 4 },
+            { name: "Leviathan", emoji: "🐋🌊", tier: 4 }, { name: "Chimera", emoji: "🦁🐍", tier: 4 },
+            { name: "Basilisk", emoji: "🐍👀", tier: 4 }, { name: "Minotaur", emoji: "🐂🪓", tier: 4 },
+            { name: "Ice Golem", emoji: "☃️🛡️", tier: 4 }, { name: "Magma Golem", emoji: "🌋👹", tier: 4 },
+            { name: "Black Dragon", emoji: "🐲🖤", tier: 4 }, { name: "Lich King", emoji: "💀👑", tier: 4 },
+            { name: "Void Beast", emoji: "👁️🕳️", tier: 4 }, { name: "Behemoth", emoji: "🐗🏔️", tier: 4 },
+            { name: "Cthulhu", emoji: "🐙🧠", tier: 4 }, { name: "Medusa", emoji: "👩🐍", tier: 4 },
+            { name: "Godzilla", emoji: "🦖☢️", tier: 4 }, { name: "Anubis", emoji: "🐕⚖️", tier: 4 }
         ];
 
         // --- 2. STATE ---

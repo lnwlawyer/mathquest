@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MathQuest: The Kingdom Savior</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Kanit:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            touch-action: manipulation; /* Prevent double-tap zoom */
+        }
+        .font-ui {
+            font-family: 'Kanit', sans-serif;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-4px, 0, 0); }
+            20%, 80% { transform: translate3d(6px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+        .damage-text {
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        .attack-anim {
+            animation: lunging 0.3s ease-in-out;
+        }
+        @keyframes lunging {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(30px) scale(1.1); }
+            100% { transform: translateX(0); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a202c; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-[100dvh] flex items-center justify-center p-0 md:p-4 select-none overflow-hidden">
+
+    <!-- Game Container -->
+    <div class="relative w-full h-[100dvh] md:max-w-md md:h-[85vh] bg-gray-800 md:border-4 md:border-gray-600 md:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        
+        <!-- Header -->
+        <div class="bg-indigo-900 p-2 flex justify-between items-center border-b-4 border-gray-700 h-16 shrink-0 relative z-20">
+            <!-- Home Button -->
+            <button onclick="confirmExit()" class="text-gray-400 hover:text-white transition-colors p-2" title="กลับหน้าหลัก">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+            </button>
+
+            <div class="text-xs text-yellow-300 w-1/3 text-center">
+                <div class="font-ui text-green-300 text-xs mb-1 truncate px-1" id="grade-display">ระดับ: เตรียมตัว</div>
+            </div>
+            
+            <div class="text-center w-1/3">
+                <h1 class="text-[10px] md:text-xs text-white drop-shadow-md tracking-widest mb-1">MATHQUEST</h1>
+                <div class="text-[10px] text-gray-400 font-ui" id="progress-text">ข้อที่ 0</div>
+            </div>
+
+            <div class="text-xs text-red-300 text-right w-1/3 pr-2">
+                <div class="text-[10px]">SCORE <span id="player-score">0</span></div>
+            </div>
+        </div>
+
+        <!-- Battle Area (Flexible Height) -->
+        <div class="relative flex-grow bg-gray-800 flex flex-col justify-between p-4 overflow-hidden" id="battle-scene">
+            <!-- Background Image Layer (ใช้ img tag แทน css background เพื่อความเสถียรใน Google Sites) -->
+            <img id="battle-bg" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2670&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 z-0" alt="Background">
+            
+            <!-- Overlay Layer -->
+            <div class="absolute inset-0 bg-black/20 z-0"></div>
+
+            <!-- Monster (Top Right) -->
+            <div class="relative z-10 flex flex-col items-center mt-2 mr-2 self-end transition-all duration-300" id="monster-container">
+                <div class="flex items-center space-x-2 mb-1">
+                    <span id="monster-name" class="text-white text-[10px] bg-black/60 px-2 py-1 rounded-full font-ui border border-gray-500">Waiting...</span>
+                    <div class="w-24 h-2 bg-gray-700 border border-white rounded-full relative overflow-hidden">
+                        <div id="monster-hp-bar" class="h-full bg-red-500 transition-all duration-500" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="text-7xl md:text-8xl filter drop-shadow-2xl transition-transform transform hover:scale-110 mt-1" id="monster-sprite">
+                    🥚
+                </div>
+                <div id="monster-damage" class="absolute top-10 text-4xl text-yellow-400 font-bold opacity-0 shadow-black drop-shadow-lg" style="text-shadow: 2px 2px 0 #000;"></div>
+            </div>
+
+            <!-- Hero (Bottom Left) -->
+            <div class="relative z-10 flex flex-col items-center mb-1 self-start ml-2" id="hero-container">
+                <!-- Avatar Token -->
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                    <img src="https://live.staticflickr.com/65535/55028455350_fc3a49a9e4_m.jpg" class="relative w-20 h-20 md:w-24 md:h-24 object-cover rounded-full border-4 border-white shadow-2xl mb-1 bg-black" id="hero-sprite" alt="Hero">
+                </div>
+                
+                <div class="flex items-center space-x-2 mt-1">
+                    <div class="w-24 h-2 bg-gray-700 border border-white rounded-full relative overflow-hidden shadow-lg">
+                        <div id="hero-hp-bar" class="h-full bg-green-500 transition-all duration-500" style="width: 100%;"></div>
+                        <span id="hero-hp-text" class="absolute inset-0 flex items-center justify-center text-[8px] pt-px font-bold shadow-black drop-shadow-md leading-none">100/100</span>
+                    </div>
+                </div>
+                <div id="hero-damage" class="absolute top-0 text-4xl text-red-500 font-bold opacity-0" style="text-shadow: 2px 2px 0 #000;"></div>
+            </div>
+        </div>
+
+        <!-- Dialogue / Status Box -->
+        <div class="bg-black border-t-4 border-gray-600 p-3 h-16 md:h-20 overflow-y-auto shrink-0 font-ui text-xs md:text-sm text-gray-300 leading-tight" id="game-log">
+            <p class="text-yellow-300">> ยินดีต้อนรับสู่อาณาจักรคณิตศาสตร์!</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-gray-800 p-3 md:p-4 shrink-0 pb-6 md:pb-8" id="control-panel">
+            <div class="mb-3 text-center">
+                <div class="text-gray-400 text-[10px] mb-1 font-ui">จงหาคำตอบเพื่อโจมตี!</div>
+                <div class="bg-black border-2 border-white p-2 md:p-3 rounded-lg flex justify-center items-center gap-2 shadow-inner h-12 md:h-14">
+                    <span id="question-text" class="text-xl md:text-2xl text-white tracking-wider">START</span>
+                </div>
+            </div>
+
+            <!-- Choices -->
+            <div id="choices-container" class="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-32">
+                <button onclick="resetToTitle()" class="col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all text-lg font-ui h-full flex items-center justify-center">
+                    เริ่มเกม (Start)
+                </button>
+            </div>
+        </div>
+
+        <!-- Start/Game Over Overlay -->
+        <div id="overlay" class="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center text-center p-6">
+            <h1 id="overlay-title" class="text-3xl md:text-4xl text-yellow-400 mb-2 animate-pulse drop-shadow-[0_4px_0_rgba(0,0,0,1)]">MATH QUEST</h1>
+            <p id="overlay-msg" class="text-gray-300 mb-6 font-ui text-xs md:text-sm">เลือกระดับชั้นเพื่อเริ่มการผจญภัย</p>
+            
+            <!-- Level Select Container -->
+            <div id="level-select-container" class="w-full max-w-sm grid grid-cols-2 gap-2 md:gap-3 overflow-y-auto max-h-[50vh] pr-1 pb-4">
+                <!-- Buttons injected by JS -->
+            </div>
+            
+            <div id="game-over-buttons" class="hidden flex-col gap-2 md:gap-3 w-full max-w-xs mt-4">
+                 <button onclick="restartLevel()" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 border-b-4 border-green-800 active:border-b-0 active:mt-1 rounded font-ui w-full text-base md:text-lg mb-1">
+                    🔄 เล่นอีกครั้ง
+                </button>
+                 <button onclick="resetToTitle()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 border-b-4 border-gray-800 active:border-b-0 active:mt-1 rounded font-ui w-full text-sm md:text-base">
+                    🏠 กลับสู่หน้าหลัก
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+
+        const gradeConfig = [
+            { name: "อนุบาล 1", count: 30, type: "anuban1" },
+            { name: "อนุบาล 2", count: 30, type: "anuban2" },
+            { name: "อนุบาล 3", count: 30, type: "anuban3" },
+            { name: "ป.1", count: 10, type: "por1" },
+            { name: "ป.2", count: 10, type: "por2" },
+            { name: "ป.3", count: 10, type: "por3" },
+            { name: "ป.4", count: 10, type: "por4" },
+            { name: "ป.5", count: 10, type: "por5" },
+            { name: "ป.6", count: 10, type: "por6" },
+            { name: "มัธยม (Endless)", count: 9999, type: "endless" }
+        ];
+
+        // NEW: Huge Pool of Backgrounds
+        const backgroundPool = [
+            "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2670&auto=format&fit=crop", // Mountains
+            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2673&auto=format&fit=crop", // Beach
+            "https://images.unsplash.com/photo-1596516109370-29001ec8ec36?q=80&w=2670&auto=format&fit=crop", // Sky
+            "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2613&auto=format&fit=crop", // Night Sky
+            "https://images.unsplash.com/photo-1448375240586-dfd8d395ea6c?q=80&w=2670&auto=format&fit=crop", // Forest
+            "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=2574&auto=format&fit=crop", // Village
+            "https://images.unsplash.com/photo-1547922657-b3dbf97022d4?q=80&w=2670&auto=format&fit=crop", // Castle
+            "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2672&auto=format&fit=crop", // Deep Space
+            "https://images.unsplash.com/photo-1516934024742-b461fba47600?q=80&w=2574&auto=format&fit=crop", // Desert
+            "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?q=80&w=2670&auto=format&fit=crop", // Winter
+            "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?q=80&w=2670&auto=format&fit=crop", // Autumn Forest
+            "https://images.unsplash.com/photo-1518176258769-f227c798150e?q=80&w=2670&auto=format&fit=crop", // Meadow
+            "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?q=80&w=2676&auto=format&fit=crop", // Deep Forest
+            "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=2670&auto=format&fit=crop", // Underwaterish/Blue
+            "https://images.unsplash.com/photo-1516216628859-9bcce593dd4a?q=80&w=2669&auto=format&fit=crop", // Cyberpunk City
+            "https://images.unsplash.com/photo-1614730341194-75c60740a0d3?q=80&w=2574&auto=format&fit=crop", // Neon
+            "https://images.unsplash.com/photo-1480497490787-505ec076689f?q=80&w=2669&auto=format&fit=crop", // Volcano/Fire
+            "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2111&auto=format&fit=crop", // Galaxy
+            "https://images.unsplash.com/photo-1518098268026-4e187843b218?q=80&w=2670&auto=format&fit=crop", // Dark Cave
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2670&auto=format&fit=crop"  // Waterfall
+        ];
+
+        const monsterPool = [
+            // Tier 1: Cute Animals (Anuban)
+            { name: "Slime", emoji: "💧", tier: 1 }, { name: "Chick", emoji: "🐥", tier: 1 },
+            { name: "Bunny", emoji: "🐰", tier: 1 }, { name: "Froggy", emoji: "🐸", tier: 1 },
+            { name: "Snail", emoji: "🐌", tier: 1 }, { name: "Turtle", emoji: "🐢", tier: 1 },
+            { name: "Mouse", emoji: "🐭", tier: 1 }, { name: "Ladybug", emoji: "🐞", tier: 1 },
+            { name: "Bee", emoji: "🐝", tier: 1 }, { name: "Caterpillar", emoji: "🐛", tier: 1 },
+            { name: "Butterfly", emoji: "🦋", tier: 1 }, { name: "Fish", emoji: "🐠", tier: 1 },
+            { name: "Penguin", emoji: "🐧", tier: 1 }, { name: "Duck", emoji: "🦆", tier: 1 },
+            { name: "Piggy", emoji: "🐷", tier: 1 },
+
+            // Tier 2: Wild Animals (Por 1-3)
+            { name: "Bat", emoji: "🦇", tier: 2 }, { name: "Spider", emoji: "🕷️", tier: 2 },
+            { name: "Snake", emoji: "🐍", tier: 2 }, { name: "Rat", emoji: "🐀", tier: 2 },
+            { name: "Scorpion", emoji: "🦂", tier: 2 }, { name: "Crab", emoji: "🦀", tier: 2 },
+            { name: "Wolf", emoji: "🐺", tier: 2 }, { name: "Boar", emoji: "🐗", tier: 2 },
+            { name: "Eagle", emoji: "🦅", tier: 2 }, { name: "Fox", emoji: "🦊", tier: 2 },
+            { name: "Owl", emoji: "🦉", tier: 2 }, { name: "Lizard", emoji: "🦎", tier: 2 },
+            { name: "Monkey", emoji: "🐒", tier: 2 }, { name: "Rooster", emoji: "🐓", tier: 2 },
+            { name: "Squid", emoji: "🦑", tier: 2 },
+
+            // Tier 3: Fantasy Creatures (Por 4-6)
+            { name: "Ghost", emoji: "👻", tier: 3 }, { name: "Goblin", emoji: "👺", tier: 3 },
+            { name: "Skeleton", emoji: "💀", tier: 3 }, { name: "Mummy", emoji: "🤕", tier: 3 },
+            { name: "Zombie", emoji: "🧟", tier: 3 }, { name: "Ogre", emoji: "👹", tier: 3 },
+            { name: "Vampire", emoji: "🧛", tier: 3 }, { name: "Werewolf", emoji: "🐕‍🦺", tier: 3 },
+            { name: "Golem", emoji: "🗿", tier: 3 }, { name: "Cyclops", emoji: "👁️", tier: 3 },
+            { name: "Genie", emoji: "🧞", tier: 3 }, { name: "Witch", emoji: "🧙‍♀️", tier: 3 },
+            { name: "Yeti", emoji: "🦍", tier: 3 }, { name: "Shark", emoji: "🦈", tier: 3 },
+            
+            // Tier 4-5: Bosses (High Levels/Endless)
+            { name: "Dragon", emoji: "🐉", tier: 4 }, { name: "T-Rex", emoji: "🦖", tier: 4 },
+            { name: "Kraken", emoji: "🐙", tier: 4 }, { name: "Demon", emoji: "👿", tier: 4 },
+            { name: "Alien", emoji: "👽", tier: 4 }, { name: "Robot", emoji: "🤖", tier: 4 },
+            { name: "UFO", emoji: "🛸", tier: 4 }, { name: "Phoenix", emoji: "🦅🔥", tier: 4 },
+            { name: "Hydra", emoji: "🐍🐍", tier: 4 }, { name: "King Kong", emoji: "🦍👑", tier: 4 }
+        ];
+
+        // --- 2. STATE ---
+
+        let gameState = {
+            totalCorrect: 0,
+            startTotalCorrect: 0,
+            score: 0,
+            streak: 0,
+            heroHP: 100,
+            heroMaxHP: 100,
+            monsterHP: 0,
+            monsterMaxHP: 0,
+            monsterDamage: 0,
+            currentAnswer: 0,
+            isPlaying: false,
+            currentGradeIndex: 0,
+            currentBg: "" 
+        };
+
+        // --- 3. INIT & UTILS ---
+        
+        // Initialize Level Select Buttons
+        function initLevelSelect() {
+            const container = document.getElementById('level-select-container');
+            container.innerHTML = '';
+            
+            gradeConfig.forEach((grade, index) => {
+                const btn = document.createElement('button');
+                btn.className = "bg-blue-700 hover:bg-blue-600 text-white py-3 px-2 rounded border-b-4 border-blue-900 active:border-b-0 active:translate-y-1 transition-all text-xs font-ui text-center shadow-lg";
+                btn.innerHTML = `<span class="block text-lg mb-1">⚔️</span>${grade.name}`;
+                btn.onclick = () => selectLevel(index);
+                container.appendChild(btn);
+            });
+        }
+
+        window.onload = initLevelSelect;
+
+        function confirmExit() {
+            resetToTitle();
+        }
+
+        function resetToTitle() {
+            gameState.isPlaying = false;
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('level-select-container').classList.remove('hidden');
+            document.getElementById('level-select-container').classList.add('grid');
+            document.getElementById('game-over-buttons').classList.add('hidden');
+            document.getElementById('game-over-buttons').classList.remove('flex');
+            document.getElementById('overlay-title').innerText = "MATH QUEST";
+            document.getElementById('overlay-title').className = "text-3xl md:text-4xl text-yellow-400 mb-2 animate-pulse drop-shadow-[0_4px_0_rgba(0,0,0,1)]";
+            document.getElementById('overlay-msg').innerText = "เลือกระดับชั้นเพื่อเริ่มการผจญภัย";
+        }
+
+        function selectLevel(index) {
+            let startingCorrect = 0;
+            for(let i=0; i<index; i++) {
+                startingCorrect += gradeConfig[i].count;
+            }
+            startGame(startingCorrect);
+        }
+
+        function restartLevel() {
+            startGame(gameState.startTotalCorrect);
+        }
+
+        function getGradeInfo() {
+            let accumulated = 0;
+            for(let i=0; i<gradeConfig.length; i++) {
+                if (gameState.totalCorrect < accumulated + gradeConfig[i].count) {
+                    return { 
+                        index: i, 
+                        config: gradeConfig[i], 
+                        questionsInGrade: gameState.totalCorrect - accumulated 
+                    };
+                }
+                accumulated += gradeConfig[i].count;
+            }
+            return { index: gradeConfig.length-1, config: gradeConfig[gradeConfig.length-1], questionsInGrade: 0 };
+        }
+
+        function updateUI() {
+            const gradeInfo = getGradeInfo();
+            const config = gradeInfo.config;
+            
+            document.getElementById('grade-display').innerText = `ระดับ: ${config.name}`;
+            
+            // Use current stored BG via IMG tag
+            const bgImg = document.getElementById('battle-bg');
+            if (gameState.currentBg && bgImg.src !== gameState.currentBg) {
+                bgImg.src = gameState.currentBg;
+            }
+
+            const currentQ = gradeInfo.questionsInGrade + 1;
+            const maxQ = config.count;
+            if(config.type === 'endless') {
+                document.getElementById('progress-text').innerText = `ข้อที่ ${gameState.totalCorrect}`;
+            } else {
+                document.getElementById('progress-text').innerText = `ความคืบหน้า: ${currentQ}/${maxQ}`;
+            }
+
+            document.getElementById('player-score').innerText = gameState.score;
+            
+            const heroPercent = (gameState.heroHP / gameState.heroMaxHP) * 100;
+            document.getElementById('hero-hp-bar').style.width = `${Math.max(0, heroPercent)}%`;
+            document.getElementById('hero-hp-text').innerText = `${Math.ceil(gameState.heroHP)}/${gameState.heroMaxHP}`;
+
+            const monsterPercent = (gameState.monsterHP / gameState.monsterMaxHP) * 100;
+            document.getElementById('monster-hp-bar').style.width = `${Math.max(0, monsterPercent)}%`;
+        }
+
+        function log(msg, type="neutral") {
+            const logBox = document.getElementById('game-log');
+            const p = document.createElement('p');
+            p.innerText = `> ${msg}`;
+            if(type === 'good') p.className = "text-green-400";
+            if(type === 'bad') p.className = "text-red-400";
+            if(type === 'levelup') p.className = "text-yellow-300 font-bold border-b border-yellow-300 pb-1";
+            logBox.prepend(p);
+            if(logBox.children.length > 5) logBox.lastChild.remove();
+        }
+
+        function startGame(startTotalCorrect = 0) {
+            gameState.totalCorrect = startTotalCorrect;
+            gameState.startTotalCorrect = startTotalCorrect;
+            gameState.score = 0;
+            gameState.streak = 0;
+            gameState.heroHP = 100;
+            gameState.heroMaxHP = 100;
+            gameState.isPlaying = true;
+            gameState.currentGradeIndex = getGradeInfo().index;
+            
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('choices-container').innerHTML = '';
+            
+            log("เริ่มการผจญภัย!", "good");
+            spawnMonster();
+            updateUI();
+        }
+
+        function spawnMonster() {
+            const gradeInfo = getGradeInfo();
+            const gradeType = gradeInfo.config.type;
+            
+            // Select Random Background
+            const randomBg = backgroundPool[Math.floor(Math.random() * backgroundPool.length)];
+            gameState.currentBg = randomBg;
+
+            let targetTier = 1;
+            if (gradeType.includes("anuban")) targetTier = 1;
+            else if (['por1', 'por2', 'por3'].includes(gradeType)) targetTier = 2;
+            else if (['por4', 'por5', 'por6'].includes(gradeType)) targetTier = 3;
+            else targetTier = 4;
+
+            let availableMonsters = monsterPool.filter(m => m.tier === targetTier || (m.tier === targetTier - 1 && Math.random() > 0.7));
+            if (availableMonsters.length === 0) availableMonsters = monsterPool.filter(m => m.tier === 1);
+
+            const monsterData = availableMonsters[Math.floor(Math.random() * availableMonsters.length)];
+
+            // Scaling Stats
+            const scaleFactor = 1 + (gameState.totalCorrect * 0.08);
+            gameState.monsterMaxHP = Math.floor(20 * scaleFactor * (monsterData.tier * 0.8));
+            gameState.monsterHP = gameState.monsterMaxHP;
+            gameState.monsterDamage = Math.floor(5 + (gameState.totalCorrect * 0.1));
+
+            document.getElementById('monster-sprite').innerText = monsterData.emoji;
+            document.getElementById('monster-name').innerText = monsterData.name;
+            
+            const mContainer = document.getElementById('monster-container');
+            mContainer.classList.remove('animate__bounceIn');
+            void mContainer.offsetWidth;
+            mContainer.classList.add('animate__animated', 'animate__bounceIn');
+
+            updateUI();
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            let num1, num2, operator, answer;
+            const gradeInfo = getGradeInfo();
+            const type = gradeInfo.config.type;
+
+            // --- DIFFICULTY LOGIC ---
+            if (type === "anuban1") {
+                num1 = Math.floor(Math.random() * 6); num2 = Math.floor(Math.random() * 5);
+                operator = "+"; answer = num1 + num2;
+            } else if (type === "anuban2") {
+                num1 = Math.floor(Math.random() * 11); num2 = Math.floor(Math.random() * 10);
+                operator = "+"; answer = num1 + num2;
+            } else if (type === "anuban3") {
+                if(Math.random()>0.5){ num1=Math.floor(Math.random()*10)+1; num2=Math.floor(Math.random()*num1); operator="-"; answer=num1-num2; }
+                else { num1=Math.floor(Math.random()*15); num2=Math.floor(Math.random()*15); operator="+"; answer=num1+num2; }
+            } else if (type === "por1") {
+                if(Math.random()>0.5){ num1=Math.floor(Math.random()*25); num2=Math.floor(Math.random()*25); operator="+"; answer=num1+num2; }
+                else { num1=Math.floor(Math.random()*50)+5; num2=Math.floor(Math.random()*num1); operator="-"; answer=num1-num2; }
+            } else if (type === "por2") {
+                if(Math.random()>0.5){ num1=Math.floor(Math.random()*50); num2=Math.floor(Math.random()*50); operator="+"; answer=num1+num2; }
+                else { num1=Math.floor(Math.random()*100)+10; num2=Math.floor(Math.random()*num1); operator="-"; answer=num1-num2; }
+            } else if (type === "por3") {
+                if(Math.random()<0.4){ num1=Math.floor(Math.random()*4)+2; num2=Math.floor(Math.random()*9)+1; operator="x"; answer=num1*num2; }
+                else { 
+                    operator = Math.random()>0.5?"+":"-";
+                    if(operator==="+"){ num1=Math.floor(Math.random()*100); num2=Math.floor(Math.random()*100); answer=num1+num2; }
+                    else { num1=Math.floor(Math.random()*100)+20; num2=Math.floor(Math.random()*num1); answer=num1-num2; }
+                }
+            } else if (type === "por4") {
+                num1=Math.floor(Math.random()*11)+2; num2=Math.floor(Math.random()*12)+1; operator="x"; answer=num1*num2;
+            } else if (type === "por5") {
+                if(Math.random()>0.5){ num2=Math.floor(Math.random()*9)+2; answer=Math.floor(Math.random()*12)+1; num1=num2*answer; operator="÷"; }
+                else { num1=Math.floor(Math.random()*12)+2; num2=Math.floor(Math.random()*12)+2; operator="x"; answer=num1*num2; }
+            } else { // Por 6 & Endless
+                const r = Math.random();
+                if(r<0.25){ num1=Math.floor(Math.random()*500); num2=Math.floor(Math.random()*500); operator="+"; answer=num1+num2; }
+                else if(r<0.5){ num1=Math.floor(Math.random()*500)+100; num2=Math.floor(Math.random()*num1); operator="-"; answer=num1-num2; }
+                else if(r<0.75){ num1=Math.floor(Math.random()*20)+2; num2=Math.floor(Math.random()*20)+2; operator="x"; answer=num1*num2; }
+                else { num2=Math.floor(Math.random()*15)+3; answer=Math.floor(Math.random()*20)+1; num1=num2*answer; operator="÷"; }
+            }
+
+            gameState.currentAnswer = answer;
+            document.getElementById('question-text').innerText = `${num1} ${operator} ${num2} = ?`;
+            generateChoices(answer);
+        }
+
+        function generateChoices(correctAnswer) {
+            const container = document.getElementById('choices-container');
+            container.innerHTML = '';
+            
+            let choices = new Set();
+            choices.add(correctAnswer);
+
+            while(choices.size < 4) {
+                let offset = Math.floor(Math.random() * 10) - 5;
+                if(offset === 0) offset = 1;
+                let val = correctAnswer + offset;
+                if(val < 0) val = 0; 
+                choices.add(val);
+            }
+
+            let choicesArray = Array.from(choices);
+            choicesArray.sort(() => Math.random() - 0.5);
+
+            choicesArray.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = "bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded border-b-4 border-gray-900 active:border-b-0 active:translate-y-1 transition-all text-xl font-ui h-full";
+                btn.innerText = choice;
+                btn.onclick = () => checkAnswer(choice);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected) {
+            if (!gameState.isPlaying) return;
+
+            if (selected === gameState.currentAnswer) {
+                handlePlayerAttack();
+            } else {
+                handlePlayerDamage();
+            }
+        }
+
+        function handlePlayerAttack() {
+            let damage = 10 + (gameState.streak * 2);
+            let isCrit = Math.random() > 0.8;
+            if(isCrit) { damage *= 2; log("Critical Hit!", "good"); }
+            else { log("โจมตีสำเร็จ!", "good"); }
+
+            const hero = document.getElementById('hero-container');
+            hero.classList.add('attack-anim');
+            setTimeout(() => hero.classList.remove('attack-anim'), 300);
+            
+            const mContainer = document.getElementById('monster-container');
+            mContainer.classList.add('shake');
+            setTimeout(() => mContainer.classList.remove('shake'), 500);
+
+            showFloatingText(document.getElementById('monster-damage'), `-${damage}`);
+
+            gameState.monsterHP -= damage;
+            gameState.score += 100 + (gameState.streak * 10);
+            gameState.streak++;
+            gameState.totalCorrect++;
+
+            const currentGrade = getGradeInfo();
+            if (currentGrade.index > gameState.currentGradeIndex) {
+                log(`เลื่อนชั้นสู่ ${currentGrade.config.name}!`, "levelup");
+                gameState.currentGradeIndex = currentGrade.index;
+                gameState.heroMaxHP += 20; 
+                gameState.heroHP = gameState.heroMaxHP; 
+            } else {
+                gameState.heroHP = Math.min(gameState.heroMaxHP, gameState.heroHP + 5); 
+            }
+            
+            updateUI();
+
+            if (gameState.monsterHP <= 0) {
+                setTimeout(spawnMonster, 600);
+            } else {
+                generateQuestion();
+            }
+        }
+
+        function handlePlayerDamage() {
+            gameState.streak = 0;
+            const damage = gameState.monsterDamage;
+            
+            log("ตอบผิด! โดนโจมตี!", "bad");
+
+            const hero = document.getElementById('hero-container');
+            hero.classList.add('shake');
+            setTimeout(() => hero.classList.remove('shake'), 500);
+
+            showFloatingText(document.getElementById('hero-damage'), `-${damage}`);
+
+            gameState.heroHP -= damage;
+            updateUI();
+
+            if (gameState.heroHP <= 0) {
+                gameOver();
+            }
+        }
+
+        function showFloatingText(element, text) {
+            element.innerText = text;
+            element.style.opacity = 1;
+            element.classList.remove('damage-text');
+            void element.offsetWidth;
+            element.classList.add('damage-text');
+        }
+
+        function gameOver() {
+            gameState.isPlaying = false;
+            document.getElementById('overlay').classList.remove('hidden');
+            
+            // Hide level select, show game over options
+            document.getElementById('level-select-container').classList.add('hidden');
+            document.getElementById('level-select-container').classList.remove('grid');
+            document.getElementById('game-over-buttons').classList.remove('hidden');
+            document.getElementById('game-over-buttons').classList.add('flex');
+
+            document.getElementById('overlay-title').innerText = "GAME OVER";
+            document.getElementById('overlay-title').className = "text-3xl md:text-4xl text-red-500 mb-2 animate-bounce drop-shadow-[0_4px_0_rgba(0,0,0,1)]";
+            
+            const gradeInfo = getGradeInfo();
+            document.getElementById('overlay-msg').innerText = `สิ้นสุดที่ระดับ: ${gradeInfo.config.name}\nคะแนน: ${gameState.score}`;
+        }
+    </script>
+</body>
+</html>
